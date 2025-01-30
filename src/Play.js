@@ -9,6 +9,16 @@ class Play extends Phaser.Scene {
         this.SHOT_VELOCITY_Y_MIN = 700
         this.SHOT_VELOCITY_Y_MAX = 1100
         this.WALL_SPEED = 1
+
+        // Initialize registry values if they don't exist
+
+        if (!this.registry.has('shotCount')) {
+            this.registry.set('shotCount', 0);
+        }
+        if (!this.registry.has('successCount')) {
+            this.registry.set('successCount', 0);
+        }
+
     }
 
     preload() {
@@ -54,16 +64,37 @@ class Play extends Phaser.Scene {
         this.oneWay.body.setImmovable(true)
         this.oneWay.body.checkCollision.down = false
 
+        // Add UI text elements
+        this.shotText = this.add.text(20, 20, 'Shots: 0', { 
+            fontSize: '24px', 
+            fill: '#fff',
+            fontFamily: 'Arial, sans-serif' 
+        }).setScrollFactor(0);
+        
+        this.scoreText = this.add.text(20, 50, 'Success: 0', { 
+            fontSize: '24px', 
+            fill: '#fff',
+            fontFamily: 'Arial, sans-serif' 
+        }).setScrollFactor(0);
+        
+        this.percentText = this.add.text(20, 80, 'Rate: 0%', { 
+            fontSize: '24px', 
+            fill: '#fff',
+            fontFamily: 'Arial, sans-serif' 
+        }).setScrollFactor(0);
+
         // add pointer input
         this.input.on('pointerdown', (pointer) => {
             let shotDirection = pointer.y <= this.ball.y ? 1 : -1
             let shotX = pointer.x <= this.ball.x ? 150 : -150
             this.ball.body.setVelocityX(shotX)
             this.ball.body.setVelocityY(Phaser.Math.Between(this.SHOT_VELOCITY_Y_MIN, this.SHOT_VELOCITY_Y_MAX) * shotDirection)
+            this.registry.set('shotCount', this.registry.get('shotCount') + 1)
         })
 
         // cup/ball collision
         this.physics.add.collider(this.ball, this.cup, (ball, cup) => {    
+            this.registry.set('successCount', this.registry.get('successCount') + 1)
             this.ball.alpha = 0
             this.scene.restart('playScene')
         })
@@ -81,9 +112,17 @@ class Play extends Phaser.Scene {
             this.WALL_SPEED *= -1
         }
         else if (this.wallA.x == 93 ){
-            this.WALL_SPEED *= -1
-            
+            this.WALL_SPEED *= -1   
         }
+
+        // Update UI text
+        const shots = this.registry.get('shotCount');
+        const successes = this.registry.get('successCount');
+        const percent = shots > 0 ? Math.round((successes / shots) * 100) : 0;
+
+        this.shotText.setText(`Shots: ${shots}`);
+        this.scoreText.setText(`Success: ${successes}`);
+        this.percentText.setText(`Rate: ${percent}%`);        
     }
 }
 /*
@@ -92,5 +131,5 @@ Try to implement at least 3/4 of the following features during the remainder of 
 [x] Add ball reset logic on successful shot
 [x] Improve shot logic by making pointer’s relative x-position shoot the ball in correct x-direction
 [x] Make one obstacle move left/right and bounce against screen edges
-[ ] Create and display shot counter, score, and successful shot percentage
+[x] Create and display shot counter, score, and successful shot percentage
 */
